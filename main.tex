@@ -1,0 +1,324 @@
+\documentclass[
+	%nofont % Vypnutí přednastaveného fontu Times New Roman
+]{cz_sablona}
+
+
+\title{IPA overview}
+\author{Zubař}
+\date{\today}
+
+\usepackage{svg}
+\usepackage{float} %added so I can place figures [H]
+\usepackage{textcomp}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+% Make list spacing smaller
+\setlist[itemize]{noitemsep, topsep=0.25em, parsep=0pt, partopsep=0pt}
+\setlist[enumerate]{noitemsep, topsep=0.25em, parsep=0pt, partopsep=0pt}
+
+
+\newcommand{\reg}[1]{\texttt{\textcolor{red}{#1}}}
+\newcommand{\mem}[1]{\texttt{\textcolor{blue}{#1}}}
+\definecolor{darkgreen}{rgb}{0.0, 0.5, 0.0}
+\newcommand{\const}[1]{\texttt{\textcolor{darkgreen}{#1}}}
+\newcommand{\instr}[1]{\texttt{\textbf{#1}}}
+
+\begin{document}
+
+\maketitle
+
+\thispagestyle{empty}
+\newpage
+\tableofcontents
+\thispagestyle{empty}
+\newpage
+\section{MMX}
+\subsection{Info}
+Rozšíření uděláno pro zpracování multimedií.\\
+Nepřináší žádný nový hardware, ale parazituje na FPU.\\[0.5em]
+\textbf{Osm 64 bitových registrů} (MM0-MM7)\\[0.5em]
+Znamená to, že z 80 bitů registru je využíváno pouze 64, zbylých 16 je nevyužitých.
+Umí pracovat jenom s celými čísly, but signed nebo unsigned.\\
+
+\noindent
+Používá přípony instrukcí, aby určil typ, tedy:
+\begin{itemize}
+    \item \textit{i128} signed 128 integer
+    \item \textit{i64} signed 64 integer
+    \item \textit{u64} unsigned 64 integer
+    \item \textit{i32} signed 32 integer
+    \item \textit{u32} unsigned 32 integer
+    \item \textit{i16} signed 16 integer
+    \item \textit{u16} unsigned 16 integer
+    \item \textit{i8} signed 8 integer
+    \item \textit{u8} unsigned 8 integer
+\end{itemize}
+
+\noindent
+\textbf{Aritmetika MMX}
+\begin{itemize}
+    \item \textbf{Maskovací}\\
+    To co se nevleze po provedení se zahodí.\\
+    CF (carry flag) a OF (overflow flag) se ignorují.
+    \item \textbf{Znamenková saturace}\\
+    Pokud přeteče pozitivně, nastaví se na max, naopak na min.
+    \item \textbf{ Beznaménková saturace}\\
+    Pokud přeteče pozitivně, nastaví se na max, naopak na min(tedy 0).
+\end{itemize}
+
+\subsection{Instrukce MMX (a SSE do budoucna)}
+\noindent
+\begin{itemize}
+    \item \reg{mm} -- reprezentuje registr MMX
+    \item \mem{m64} -- reprezentuje 64bitový blok paměti
+    \item \mem{m32} -- reprezentuje 32bitový blok paměti
+    \item \const{imm8} -- je konstantní 8bitová hodnota
+    \item \reg{r32} -- je 32bitový registr pro obecné použití
+    \item \reg{r64} -- je 64bitový registr pro obecné použití
+    \item \reg{r}/\mem{m32} -- říká, že si můžeme vybrat, zda operand bude 32bitový registr nebo 32bitový blok v paměti
+    \item \reg{mm}/\mem{m64} -- nám dává na výběr registr MMX a 64bitový blok paměti
+    \item \reg{\textsuperscript{x}mm} -- nám dává na výběr registr MMX nebo XMM(SSE)
+\end{itemize}
+
+\subsubsection{Instrukce přesunu}
+\noindent
+Základní instrukce pro přesun dat mezi registry MMX, obecnými registry a pamětí:
+
+\begin{itemize}
+    \item \instr{MOVD} \reg{mm}\textbf{,} \reg{r}/\mem{m32}
+    -- přesune 32bitovou hodnotu z 32bitového registru nebo paměti do MMX registru a naopak.
+    \item \instr{MOVQ} \reg{\textsuperscript{x}mm}\textbf{,} \mem{m64}/\reg{r64}
+    -- přesune 64bitový blok z registru do registru nebo paměti a naopak.
+    \item \instr{MOVQ} \reg{\textsuperscript{x}mm}\textbf{,} \reg{r64}
+    -- přesune 64bitový blok z registru do registru obecneho použití a naopak.
+\end{itemize}
+
+\subsubsection{Instrukce aritmetické}
+\instr{PADD(S|U|nic)(B|W|D)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+\instr{PSUB(S|U|nic)(B|W|D)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}
+
+\noindent
+Sečte nebo odečte registry nebo registr s pamětí.\\
+\texttt{S|U|nic} určí aritmetiku (maskovací, znaménkovou saturaci, beznaménkovou saturaci)\\
+\texttt{B|W|D} určí velikost operandu (8, 16, 32 bitů)
+\\[0.5em]
+\instr{PMUL(L|H)W} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+Vynásobí znamenkově 16bitové operandy a uloží buď dolních (L) nebo horních (H) 16 bitů výsledku.
+\\[0.5em]
+\instr{PMADDWD} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}
+\textit{Packed Multiply and Add Words into Double}\\
+Vynásobí znamenkově 16bitové operandy, sečte levé a pravé tyhle dva 32 bitové výsledky uloží.
+\includegraphics[width=0.5\textwidth]{pics/PMADDWD.png}
+
+\subsubsection{Instrukce porovnání}
+\instr{PCMP(EQ|GT)(B|W|D)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+Vytvoří masku porovnáním operandů.
+\subsubsection{Instrukce konverzí}
+\instr{PACK(SS|US)(WB|DW)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+Zpackuje tedy vezme dva velké typy a nerve je do menších.\\
+\textit{SS|US} určí aritmetiku (znaménkovou nebo beznaménkovou saturaci)\\
+\includegraphics[width=0.5\textwidth]{pics/PACKSS.png}
+
+\subsubsection{Instrukce expanzí}
+\instr{PUNPCK(L|H)(B|W|D)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+Vezme horni nebo dolní část obou registrů a proloží je do výsledku.\\
+\includegraphics[width=0.8\textwidth]{pics/PUNPCK.png}\\
+Jak u Hight i Low verze je je první nejnižší bit vždy z DEST.
+\subsubsection{Logické instrukce}
+\instr{PAND} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+\instr{PANDN} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+\instr{POR} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+\instr{PXOR} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+Prostě udělá to operaci idk.
+\\[0.5em]
+\instr{EMMS} \textit{Empty MMx State} \\
+MUSÍ se zavolat mezi používáním MMX a FPU.\\
+Obnoví FPU registry, které MMX používá, takže se můžou použít z FPU.
+
+\subsubsection{Instrukce posunu}
+\instr{PS(L|R)L(W|D|Q)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+\instr{PS(L|R)L(W|D|Q)} \reg{\textsuperscript{x}mm}\textbf{,} \const{imm8}\\
+Shiftne jednotlivé části(bloky) v registrech doleva nebo doprava logicky, tedy doplni nuly.\\
+\texttt{L|R} určí směr posunu (Left, Right)\\
+\texttt{W|D|Q} určí velikost operandu (16, 32, 64 bitů)
+\\[0.5em]
+\instr{PSRA(W|D)} \reg{\textsuperscript{x}mm}\textbf{,} \reg{\textsuperscript{x}mm}/\mem{m64}\\
+\instr{PSRA(W|D)} \reg{\textsuperscript{x}mm}\textbf{,} \const{imm8}\\
+Arithmetic shift, tedy zachová znaménko (quad verze neexistuje).
+
+\section{SSE a AVX}
+\subsection{Info SSE}
+\textbf{Osm 128 bitových registrů} (XMM0-XMM7)\\
+\textbf{32 bitový kontrolní registr}\\
+Tyto registry již jsou reálné fyzické registry, na rozdíl od MMX.\\
+SSE taky už umí pracovat s floaty a rozlišuje mezi skalární a vektorovou operací.\\
+Skalární operace pracuje jenom s tím úplně nejnižším blokem,
+vektorová je to co bylo u MMX.
+\includegraphics[width=0.5\textwidth]{pics/vektorovaOperace.png}
+\includegraphics[width=0.5\textwidth]{pics/skalarniOperace.png}
+SSE puvodní má \textbf{jenom floaty} celá čísla neumí.\\
+SSE2 přidává double a celá čísla, a je tedy plnou nahradou MMX.\\
+Z obou verzí tedy pak vzniknou tyhle nové přípony instrukcí:
+\begin{itemize}
+    \item \textit{SS} -- scalar single (32 bitů, tedy jeden float)
+    \item \textit{PS} -- packed single (128 bitů, tedy čtyři floaty)
+    \item \textit{SD} (SSE2) -- single double (64 bitů, tedy jeden double)
+    \item \textit{PD} (SSE2) -- packed double (128 bitů, tedy dva doubly)
+\end{itemize}
+
+\subsection{Info AVX}
+AVX je rozšíření SSE.\\
+\textbf{Šestnáct 256 bitových registrů} (YMM0-YMM15)\\
+Spodnich 128 jsou XMM registry.\\
+Všechny instrukce se rozšířují na 256 bitů, vleze se tam toho víc atd.\\
+AVX ještě nemá celočíselné instrukce pro 256 bitů, to přidává až AVX2.\\
+Zavádí 3 operandové instrukce (dva zdrojové registry a jeden cílový)\\
+Tyto instrukce mají předponu \textit{V}, tím se taky odlišují od SSE, jinak
+ale vetšina instrukcí z SSE je úplně stejně v AVX.\\
+AVX2 taky přidává různé quality of life instrukce.
+
+\subsection{Řídící registr MXCSR}
+\begin{itemize}
+    \item \textbf{Vyjímky} -- bity které jsou nastaveny pokud proběhla nějaká vyjímka
+    \item \textbf{DNZ} -- Denormals Are Zeros -- 1 $\rightarrow$ denormalní čísla jsou nula\\
+    denormalní čísla jsou tak malá, že nejde normalizovat mantisa
+    \item \textbf{Maskování vyjímek} maskuje vyjímky\\
+    místo crashnutí jen ji jen nastaví\\
+    a pak tam dá tu nejvíc smyslnou hodnotu (nekonečno, NaN, ...)
+    \item \textbf{RC} -- Rounding Control -- určuje jak se zaokrouhluje\\
+    00 -- round to nearest\\
+    01 -- round down\\
+    10 -- round up\\
+    11 -- floor
+    \item \textbf{Flush to zero} -- 1 $\rightarrow$ při podtečení je výsledek nula
+\end{itemize}
+
+\subsection{Instrukce}
+\begin{itemize}
+    \item \reg{*mm} -- reprezentuje registr SSE nebo AVX (xmm/ymm)
+    \item \reg{xmm} -- reprezentuje registr SSE (xmm)
+    \item \reg{ymm} -- reprezentuje registr AVX (ymm)
+    \item \mem{m*} -- block pamětí podle velikosti operace
+\end{itemize}
+Někde nenapíšu AVX verzi explicitně, což by mělo znamenat, že funguje úplně stejně
+jako SSE, jenom se to zapíše do dst a ty dva src se nezmění.
+
+\subsubsection{Instrukce přesunu}
+\instr{[V]MOV(A|U)P(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+\instr{[V]MOV(A|U)P(S|D)} \reg{*mm}/\mem{m*}\textbf{,} \reg{*mm}\\
+Přesune data mezi registry nebo registrem a pamětí.\\
+\texttt{A|U} určí zda se jedná o aligned nebo unaligned\\
+Aligned znamená, že pokud adresa není zarovnána na velikost čtené hodnoty, dojde k chybě.\\
+\texttt{S|D} určí zda se jedná o float nebo double
+\\[0.5em]
+\instr{VLDQU} \reg{*mm}\textbf{,} \mem{m*}\\
+Vlastně to co MOVU
+\\[0.5em]
+\instr{[V]MOVS(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
+Skalární move, pracuje jen s nejnižším blokem (32 nebo 64 bitů), vynuluje zbytek.
+\\[0.5em]
+\instr{VMOVS(S|D)} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \reg{xmm}\\
+Vezme src1 a src2 a přesně v tomto položení je uloží do dst.\\
+pro S: \texttt{d[127:32] = s1[127:32], d[31:0] = s2[31:0]}\\
+pro D: \texttt{d[127:64] = s1[127:64], d[63:0] = s2[63:0]}
+\\[0.5em]
+\includegraphics[width=0.8\textwidth]{pics/VMOVSS.png}
+\\[0.5em]
+\instr{MOVPLP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
+\instr{MOVPLP(S|D)} \reg{xmm}/\mem{m*}\textbf{,} \reg{xmm}\\
+Moves the lower 64 bits, does not zero the upper bits.
+\\[0.5em]
+\instr{VMOVLP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \mem{m64}\\
+Functions like VMOVS(S|D) but with memory and without zeroing upper bits.\\
+When writing into memory, it only has two operands, and functions as expected.
+\\[0.5em]
+\instr{MOVHP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
+\instr{MOVHP(S|D)} \reg{xmm}/\mem{m*}\textbf{,} \reg{xmm}\\
+\instr{VMOVHP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \mem{m64}\\
+Similar to the Lower moves, but operates on the upper 64 bits of the XMM register.
+\\[0.5em]
+\instr{MOV(LH|HL)PS} \reg{xmm}\textbf{,} \reg{xmm}\\
+Přesune dolní polovinu jednoho registru do horní poloviny druhého a naopak.\\
+\instr{VMOV(LH|HL)PS} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \reg{xmm}\\
+LH $\leftarrow$ dH = s2L, dL = s1L\\
+HL $\leftarrow$ dH = s1H, dL = s2H
+\\[0.5em]
+\instr{[V]MOVMSKP(S|D)} \reg{r32/64}\textbf{,} \reg{*mm} 
+\textit{(Move Masked Scalar Packed Single/Double)} \\
+Zkopíruje jenom nevyšší bit každého bloku do obecného registru.
+\\[0.5em]
+\instr{[V]MOV(S|D)(H|L)DUP} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Vezme každý druhý single nebo double zleva nebo zprava zkopíruje ho do
+dst a pak je naduplikuje jednou tím stejným směrem.\\
+Obrazky jsou zleva verze high a verze low.\\
+\includegraphics[width=0.5\textwidth]{pics/MOVSHDUP.png}
+\includegraphics[width=0.5\textwidth]{pics/MOVSLDUP.png}
+
+\subsubsection{Záměny složek}
+\instr{SHUFP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\textbf{,} \const{imm8}\\
+\instr{VSHUFP(S|D)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Podle pozic definovanými dvoj bity v \const{imm8} přehází věci ze src do dest.\\
+\texttt{V} verze udělá se src1 to stejný a src2 přehází stejným způsobem
+ale do horní poloviny dst když se to tam vleze.\\
+\includegraphics[width=0.8\textwidth]{pics/SHUFP.png}
+
+\subsubsection{Extrakce složek vektorů}
+\instr{UNPCK(H|L)P(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
+\instr{VUNPCK(H|L)P(S|D)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Vezme horní nebo dolní částí obou registrů a promíchá je do výsledku.\\
+Nejnižší bit je vždy z DEST nebo SRC1 pokud je V verze.\\
+\includegraphics[width=1\textwidth]{pics/UNPCK.png}
+
+\subsubsection{Porovnání}
+\instr{CMP(SS|PS|SD|PD)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\textbf{,} \const{imm8}\\
+\instr{VCMP(SS|PS|SD|PD)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Vygeneruje masku porovnáním operandů.\\
+Porovnání dáno \const{imm8}, ale lze i pseudoinstrukcemi (e.g. \instr{CPMLEPS})
+\\[0.5em]
+\instr{[V][U]COMIS(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
+Porovná skalární floaty nebo doubly a nastaví CF, PF, ZF podle výsledku.\\
+\texttt{U} Necrashne pokud jsou čísla neporovnatelná.
+
+\subsection{Aritmetické instrukce}
+Tady je jsou všechny klasické aritmetické instrukce, ale pro floaty a doubly.\\
+Aplikují se nad sebou dle typu, případně jenom nad nejnižším blokem když je to SS/SD.\\
+Při AVX instrukcích je třetí operand buď registr nebo paměť, zbytek jsou registry.
+\\[0.5em]
+\instr{[V]ADDSUBP(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Sečte liché složky a odečte sudé.\\
+\includegraphics[width=0.5\textwidth]{pics/ADDSUB.png}
+\\[0.5em]
+\instr{[V]H(ADD|SUB)P(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Sečte/odečte sousední složky\\
+H $\rightarrow$ horizontal, pracuje s složkami ve stejném registru.\\
+\includegraphics[width=0.8\textwidth]{pics/HADD.png}
+
+\subsubsection{Konverze}
+Instrukce má formát \instr{[V]CVT[T](S|P)(S|D|I)2(S|P)(S|D|I)}. případně DQ typ\\
+\texttt{T} určuje truncation, takže jestli ořezává při konverzi.\\
+Potom převede jednu věc na druhou.\\
+Pokud je packed, tak je to mezi registry SSE nebo pamětí.\\
+Pokud je scalar, tak je to mezi SSE registrem a pamětí nebo registrem obecného použití.\\
+\texttt{S|D|I} určuje typy, tedy single, double nebo integer.\\
+\texttt{S|P} určuje jestli je to skalární nebo vektorová operace.\\
+\texttt{DQ} V tomto případě jsou to dvojslova (32-bit) celočíselná.\\
+\includegraphics[width=0.8\textwidth]{pics/conversions.png}
+
+\subsubsection{Celočíselné instrukce}
+\instr{[V]PAVG(B|W)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Dělá průměr dvou operandů vektorově.
+\\[0.5em]
+\instr{[V]PEXTRW} \reg{r32/64}/\mem{m16}\textbf{,} \reg{*mm}\textbf{,} \const{imm8}\\
+Vyextrahuje hodnotu z src na indexu daném \const{imm8} a uloží dolů do obecného registru nebo paměti.
+\\[0.5em]
+\instr{[V]INSERTW} \reg{*mm}\textbf{,} \reg{r32/64}/\mem{m16}\textbf{,} \const{imm8}\\
+Vloží hodnotu z dolní části obecného registru nebo paměti do src na index daný \const{imm8}.
+\\[0.5em]
+\instr{[V]P(MIN|MAX)(U|S)(B|W)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Určí minimální nebo maximální hodnotu mezi dvěma operandy vektorově.\\
+
+
+
+
+\end{document}

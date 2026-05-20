@@ -1,0 +1,66 @@
+# Typical LaTeX .gitignore
+# Ignore auxiliary, build and cache files produced by LaTeX engines and tools
+*.pdf
+# LaTeX intermediate files
+*.aux
+*.bbl
+*.blg
+*.brf
+*.log
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.run.xml
+*.bcf
+*.xdv
+
+# Cross-referencing / index files
+*.idx
+*.ind
+*.ilg
+
+# Presentation and navigation files
+*.nav
+*.snm
+*.vrb
+*.lof
+*.lot
+*.lol
+
+# minted package cache
+_minted-*/
+
+# build directories (common names)
+build/
+out/
+dist/
+_build/
+
+# Temporary and backup files
+*~
+*.bak
+*.backup
+.#*
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor folders and settings (uncomment if you don't want to commit these)
+.vscode/
+
+# Optional: ignore generated PDFs (comment out if you commit final PDF)
+# *.pdf
+
+# Misc: other tools
+.synctex
+
