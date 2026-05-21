@@ -385,7 +385,7 @@ Vynásobí wordy, přičemž výsledek se zaokrouhlí a pak se uloží horní č
 Vezme byty z dst a src, dst signed, src unsigned, \\
 vynásobí je, sečte sousední a nakonec zapíše do dst jako signed word.
 
-\subsubsection{SSE4}
+\subsubsection{SSE4 instrukce}
 \instr{[V]MOV(SX|ZX)(B|W|D|Q)(B|W|D|Q)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
 Kopíruje data mezi registry s tím, že je při kopírování rozšiřuje
 (tzn musi byt z mensiho na vetsi typ).\\
@@ -419,6 +419,130 @@ Takhle celý osmkrát a je to.
 Zaokrouhlí floaty dle typu na celá signed čísla.\\
 Použije \const{imm8} k určení způsobu zaokrouhlování,
 stejný jako v RC bitu MXCSR.
+\instr{[V]BLEND(PS|PD)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+\instr{[V]PBLENDW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+V dst nahradí jen ty složky, co mají v \const{imm8} nastavený bit.\\
+\instr{[V]BLENDV(PS|PD)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \reg{*mm}\\
+\instr{[V]PBLENDVB} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \reg{*mm}\\
+Stejné jako předchozí blend, ale místo \const{imm8} se použije maska v registru.
+Což jsou vždy nejvyšší bity.
+\\[0.5em]
+\instr{[V]PMULDQ} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Vynásobí dvojslova jako signed a uloží quadslovo do dst.
+\\[0.5em]
+\instr{[V]PMULLD} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Vynásobí dvojslova jako signed a uloží spodní část jako dvojslovo do dst.\\
+\instr{[V]PCMPEQQ} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Porovná dvojslova jako signed a vytvoří masku.
+\\[0.5em]
+\instr{[V]EXTRACTPS} \reg{r32}/\mem{m32}\textbf{,} \reg{*mm}\textbf{,} \const{imm8}\\
+Vyextrahuje float z src na indexu daném \const{imm8}
+a uloží ho do obecného registru nebo paměti.\\
+\instr{[V]PEXTR(B|D|Q)} \reg{r32/64}/\mem{m16/32/64}\textbf{,} \reg{*mm}\textbf{,} \const{imm8}\\
+Vyextrahuje hodnotu z src na indexu daném \const{imm8}
+a uloží ji do obecného registru nebo paměti.\\
+\instr{[V]INSERTPS} \reg{*mm}\textbf{,} \reg{r32}/\mem{m32}\textbf{,} \const{imm8}\\
+Vloží float z obecného registru nebo paměti do src na index daný \const{imm8}.\\
+\instr{[V]PINSR(B|D|Q)} \reg{*mm}\textbf{,} \reg{r32/64}/\mem{m16/32/64}\textbf{,} \const{imm8}\\
+Vloží hodnotu z obecného registru nebo paměti do src na index daný \const{imm8}.
+\\[0.5em]
+\instr{[V]P(MIN|MAX)(S|U)(B|W|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Prostě min max vektorově.\\
+\instr{PHMINPOSUW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m128}
+\textit{Packed Horizontal MINimum POSition of Unsigned Words}\\
+Vytáhne tun nejmenší prvek ze src, to dá naspod a těsně nad ni dá její index.
+\\[0.5em]
+\instr{[V]PTEST} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Výjhde li logický AND nula, nastaví ZF.
+\\[0.5em]
+\instr{MOVNTDQA} \reg{xmm}\textbf{,} \mem{m128}\\
+Jako mov, ale umožní procesoru uložit to pomocí burst write,
+takže je to jenom optimalizační.
+\instr{[V]PCMPGTQ} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Porovnává čtyřslova a tvoří masku.
+\\[0.5em]
+\instr{[V]PCMP(E|I)STR(I|M)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\textbf{,} \const{imm8}\\
+\textit{Packed CoMPare Explicit/Implicit length STRings and get Index/Masks}\\
+\begin{itemize}
+    \item E -- explicit length, déllka řetězců jedna a dva je v EAX a EDX
+    \item I -- implicit length, řetezec ukončen nulou
+    \item M -- mask, v dst bude 16(8) bitová maska
+    \item I -- index, v dst bude index prvního (případně posledního) rozdílného znaku
+\end{itemize}
+Konstanta nám pak udává spoustu dalších možností.\\
+\begin{itemize}
+    \item \const{imm8[0]} -- se znaménkem nebo bez
+    \item \const{imm8[1]} -- 0 $\rightarrow$ byte, 1 $\rightarrow$ word
+    \item \const{imm8[3:2]} -- jaký druh porovnání
+        \begin{itemize} 
+            \item[00] -- equal any (podmnožina)
+            \item[01] -- ranges (je někde mezi znaky, vždy po dvojicích)
+            \item[10] -- equal each (exact match)
+            \item[11] -- equal ordered (podřetězec)
+        \end{itemize}
+    \item \const{imm8[5:4]} -- změnit výsledek booleanovksou operací
+        \begin{itemize}
+            \item[00/01] -- nechám stejné
+            \item[10] -- invertuju
+            \item[11] -- Invertuju pokud je to validní index v src stringu
+        \end{itemize}
+    \item \const{imm8[6]} -- jak bude výsledek reprezentován\\
+        pro masku (M)
+        \begin{itemize}
+            \item[0] -- nulou rozšířených 16(8) bitů
+            \item[1] -- Rozkopíruje je to tu masku do všech prvků dst
+        \end{itemize}
+        pro index (I)
+        \begin{itemize}
+            \item[0] -- první rozdílný znak
+            \item[1] -- poslední rozdílný znak
+        \end{itemize}
+\end{itemize}
+
+\noindent
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\textbf{Nastavení příznaků E}
+
+\vspace{0.5em}
+\begin{tabular}{|l|l|}
+\hline
+CF & $(\mathrm{FinalMask} == 0)?\ 0 : 1$ \\
+\hline
+ZF & $\mathrm{abs}(\mathrm{EDX}) < 16\ (8)$ \\
+\hline
+SF & $\mathrm{abs}(\mathrm{EAX}) < 16\ (8)$ \\
+\hline
+OF & $\mathrm{FinalMask}[0]$ \\
+\hline
+AF & 0 \\
+\hline
+PF & 0 \\
+\hline
+\end{tabular}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering
+\textbf{Nastavení příznaků I}
+
+\vspace{0.5em}
+\begin{tabular}{|l|l|}
+\hline
+CF & $(\mathrm{FinalMask} == 0)?\ 0 : 1$ \\
+\hline
+ZF & nalezen konec s \\
+\hline
+SF & nalezen konec d \\
+\hline
+OF & $\mathrm{FinalMask}[0]$ \\
+\hline
+AF & 0 \\
+\hline
+PF & 0 \\
+\hline
+\end{tabular}
+\end{minipage}
 
 
 \end{document}
