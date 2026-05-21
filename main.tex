@@ -316,9 +316,109 @@ Vyextrahuje hodnotu z src na indexu daném \const{imm8} a uloží dolů do obecn
 Vloží hodnotu z dolní části obecného registru nebo paměti do src na index daný \const{imm8}.
 \\[0.5em]
 \instr{[V]P(MIN|MAX)(U|S)(B|W)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
-Určí minimální nebo maximální hodnotu mezi dvěma operandy vektorově.\\
+Určí minimální nebo maximální hodnotu mezi dvěma operandy vektorově.
+\\[0.5em]
+\instr{[V]PMOVMSKB} \reg{r32/64}\textbf{,} \reg{*mm}\\
+Zkopíruje nejvyšší bit z každých osm bitů do jedněch osmi bitů do obecného registru.
+\\[0.5em]
+\instr{[V]PMULHUW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}
+\textit{Packed Multiply Higher Unsigned Words}\\
+Vynásobí wordy a uloží z vysledku horni části do dst.\\
+\\[0.5em]
+\instr{[V]PSADBW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}
+\textit{Packed Sum of Absolute Differences of Bytes into Word}\\
+Udělá absolutní rozdíly všech byte a pak se sečte do spodního wordu dst.
+\\[0.5em]
+\instr{[V]PMULUDQ} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Vynásobí unsigned doubly a uloží je to quadword do dst.\\
+\instr{[V]PS(L|R)LDQ} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Posune obsah double quad wordů logicky, což pro xmm je cely registr.
+\\[0.5em]
+\textbf{Nové přesuny}
+\\[0.5em]
+\instr{MOVDQA} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\\
+Přesune dvě čtyřslova mezi pamětí a XMM registrem nebo mezi dvěma XMM registry.\\
+Paměť musí být zarovnaná na 16bytovou hranici.\\[0.5em]
+\instr{MOVDQU} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\\
+Stejná jako MOVDQA, ale paměť nemusí být zarovnaná.\\[0.5em]
+\instr{MOVQ2DQ} \reg{xmm}\textbf{,} \reg{mm}\\
+Přesune čtyřslové celé číslo z MMX do dolní části XMM registru a zbytek vynuluje.\\[0.5em]
+\instr{MOVDQ2Q} \reg{mm}\textbf{,} \reg{xmm}\\
+Přesune dolní čtyřslovo z XMM registru do MMX registru.\\[0.5em]
+\instr{PSHUFLW} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\textbf{,} \const{imm8}\\
+Přehází slova v dolním čtyřslovu zdrojového operandu podle pořadí daného 8bitovou konstantou.\\[0.5em]
+\instr{PSHUFHW} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\textbf{,} \const{imm8}\\
+Přehází slova v horním čtyřslovu zdrojového operandu podle pořadí daného 8bitovou konstantou.\\[0.5em]
+\instr{PSHUFD} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\textbf{,} \const{imm8}\\
+Přehází dvojslova ve zdrojovém operandu podle pořadí definovaného 8bitovou konstantou.\\[0.5em]
+\instr{PUNPCKHQDQ} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\\
+Proloží horní čtyřslovo zdroje s horním čtyřslovem cíle a výsledek uloží do cíle.\\[0.5em]
+\instr{PUNPCKLQDQ} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\\
+Proloží dolní čtyřslovo zdroje s dolním čtyřslovem cíle a výsledek uloží do cíle.
 
+\subsubsection{SSSE3 instrukce}
+\instr{[V]PSIGN(B|W|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Jakoby vezme znaménka z src a vynasobí jimi dst.\\
+Pokud je v src nula, da nulu i do dst.
+\\[0.5em]
+\instr{[V]PABS(B|W|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Udělá absolutní hodnotu všech prvků ve vektoru.
+\\[0.5em]
+\instr{[V]H(ADD|SUB)[S](W|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Zase horizontalni instrukce, tedy sčitaj/odčitaj sousedy.\\
+\texttt{S} znamená, že se použije saturace.
+\\[0.5em]
+\instr{[V]PALIGNR} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Vezme dst a src (případně src2), zkonkatenuje je, šoupne doprava
+dle \const{imm8} a výsledek uloží do dst.\\
+\instr{[V]SHUFB} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Přehází dst (nebo src1) dle obsahu src (nebo src2).\\
+Každý byte určuje jaký bajt z dst (nebo src1) se má dostat do výsledku.\\
+Negativní hodnota znamená, že se do výsledku dostane nula.
+\\[0.5em]
+\instr{[V]PMULHRW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+\textit{Packed Multiply High Round and Scale for Words}\\
+Vynásobí wordy, přičemž výsledek se zaokrouhlí a pak se uloží horní část výsledku do dst.
+\\[0.5em]
+\instr{[V]MADDUBSW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+\textit{Multiply and Add Unsigned and Signed Bytes to Signed Words}\\
+Vezme byty z dst a src, dst signed, src unsigned, \\
+vynásobí je, sečte sousední a nakonec zapíše do dst jako signed word.
 
+\subsubsection{SSE4}
+\instr{[V]MOV(SX|ZX)(B|W|D|Q)(B|W|D|Q)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Kopíruje data mezi registry s tím, že je při kopírování rozšiřuje
+(tzn musi byt z mensiho na vetsi typ).\\
+\texttt{SX|ZX} určuje jestli je to signed nebo unsigned extension.\\
+Jinak je to toho prvniho typu na druhy prostě.
+\\[0.5em]
+\instr{[V]PACKUSDW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}
+\textit{Pack Unsigned with Saturation from DWords to Words}\\
+Zpackuje dvojslova z dst i src do unsigned wordů v dst.
+\\[0.5em]
+\instr{[V]DPP(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+\textit{Dot Product of Packed Single/Double}\\
+Děká maskovaný skalarni součin mezi dvěma vektory.\\
+Nejdřív se normálně pronásobí složky, pak se sečtou ty,
+které mají v horní části \const{imm8} nastavený bit.\\
+Výsledek se pak uloží tam, kde je v dolní části \const{imm8} 
+nastavený bit.
+\\[0.5em]
+\instr{[V]MPSADBW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+\textit{Masked Packed Sum of Absolute Differences of Bytes into Words}\\
+Použije masku k tomu aby urči kde začnu s počítáním sum absolutních rozdílů.
+imm[2] $\times$ 4 je začátek v dst\\
+imm[1:0] $\times$ 4 je začátek v src\\
+V těch indexech jsou okna o velikosti 4 byte,
+s nimi se provede SAD a výsledek se uloží do dst.\\
+Pak se posune okno v dst do prava o jeden byte a znovu,
+vysledek se uloží do další pozice.\\
+Takhle celý osmkrát a je to.
+\\[0.5em]
+\instr{[V]ROUND(S|P)(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Zaokrouhlí floaty dle typu na celá signed čísla.\\
+Použije \const{imm8} k určení způsobu zaokrouhlování,
+stejný jako v RC bitu MXCSR.
 
 
 \end{document}

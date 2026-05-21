@@ -50,7 +50,7 @@
 \iffont
 	\iftutex % Používá se LuaLaTeX nebo XeLaTeX
 		\RequirePackage{fontspec}
-		\setmainfont{Times New Roman}[Ligatures=Rare]
+		\setmainfont{Liberation Serif}[Ligatures=Rare]
 	\else % PdfLaTeX
 		\RequirePackage[T1]{fontenc}
 		\RequirePackage{newtx}
