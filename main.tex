@@ -194,7 +194,7 @@ AVX2 taky přidává různé quality of life instrukce.
     \item \textbf{Flush to zero} -- 1 $\rightarrow$ při podtečení je výsledek nula
 \end{itemize}
 
-\subsection{Instrukce}
+\subsection{Instrukce SSE (a AVX)}
 \begin{itemize}
     \item \reg{*mm} -- reprezentuje registr SSE nebo AVX (xmm/ymm)
     \item \reg{xmm} -- reprezentuje registr SSE (xmm)
@@ -280,7 +280,7 @@ Porovnání dáno \const{imm8}, ale lze i pseudoinstrukcemi (e.g. \instr{CPMLEPS
 Porovná skalární floaty nebo doubly a nastaví CF, PF, ZF podle výsledku.\\
 \texttt{U} Necrashne pokud jsou čísla neporovnatelná.
 
-\subsection{Aritmetické instrukce}
+\subsection{Aritmetické instrukce SSE a AVX}
 Tady je jsou všechny klasické aritmetické instrukce, ale pro floaty a doubly.\\
 Aplikují se nad sebou dle typu, případně jenom nad nejnižším blokem když je to SS/SD.\\
 Při AVX instrukcích je třetí operand buď registr nebo paměť, zbytek jsou registry.
@@ -356,7 +356,7 @@ Proloží horní čtyřslovo zdroje s horním čtyřslovem cíle a výsledek ulo
 \instr{PUNPCKLQDQ} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m128}\\
 Proloží dolní čtyřslovo zdroje s dolním čtyřslovem cíle a výsledek uloží do cíle.
 
-\subsubsection{SSSE3 instrukce}
+\subsection{SSSE3 instrukce}
 \instr{[V]PSIGN(B|W|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
 Jakoby vezme znaménka z src a vynasobí jimi dst.\\
 Pokud je v src nula, da nulu i do dst.
@@ -385,7 +385,7 @@ Vynásobí wordy, přičemž výsledek se zaokrouhlí a pak se uloží horní č
 Vezme byty z dst a src, dst signed, src unsigned, \\
 vynásobí je, sečte sousední a nakonec zapíše do dst jako signed word.
 
-\subsubsection{SSE4 instrukce}
+\subsection{SSE4 instrukce}
 \instr{[V]MOV(SX|ZX)(B|W|D|Q)(B|W|D|Q)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
 Kopíruje data mezi registry s tím, že je při kopírování rozšiřuje
 (tzn musi byt z mensiho na vetsi typ).\\
@@ -545,4 +545,192 @@ PF & 0 \\
 \end{minipage}
 
 
+\subsection{AVX instrukce}
+\instr{VCMP} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Od normálního CMP má navíc další options v \const{imm8}\\
+Ordered/Unordered -- NaN $\rightarrow$ false/true\\
+Quiet/Signaling -- NaN $\rightarrow$ nic/exception
+\\[0.5em]
+\instr{VZERO(ALL|UPPER)}\\
+Vynuluje všechny ymm registry nebo jenom jejich horní polovinu.
+\\[0.5em]
+\instr{VEXTRACT(F|I)128} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \const{imm8}\\
+Jak normální extrakce, ale cílem je vekt registr a operuje se s 128 bity.\\
+\instr{VINSERT(F|I)128} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \const{imm8}\\
+Jako insert, vyberu 128 bitů z src2 dle \const{imm8} zbytek doplním z src1 a dám do dst.
+\\[0.5em]
+\instr{VBROADCAST(SS|SD|F128|I128)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+\instr{VPBROADCAST(B|W|D|Q)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Rozkopíruje spodní element do zbytku dst.\\
+\instr{VMASKMOV(PS|PD)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \mem{m*}\\
+\instr{VMASKMOV(PS|PD)} \mem{m*}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}\\
+\instr{VPMASKMOV(D|Q)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \mem{m*}\\
+\instr{VPMASKMOV(D|Q)} \mem{m*}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}\\
+Zapisuje na základě masky, dané opět nejvyššími bity src1.
+\\[0.5em]
+\instr{VPPS(R|L)(L|A)V(D|Q)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
+Posune každou složky v src1 o to co je v src2 a dá to do dst.\\
+\texttt{R|L} určuje směr posunu, tedy jestli se posouvá vpravo nebo vlevo.\\
+\texttt{L|A} určuje jestli se posouvá logicky nebo aritmeticky.
+\\[0.5em]
+\instr{VPERM[IL](PS|PD)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}/\reg{*mm}\\
+Promíchá src1 podle \const{imm8} nebo src2 a uloží do dst.\\
+\texttt{IL} -- in-line -- Udělá to zvlášt pro horní a spodní polovinu.\\
+\instr{VPERM2F128} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
+Promíchá src1 a src2 podle \const{imm8} a uloží do dst.\\
+Umí i vynulovat dle \const{imm8}.
+\\[0.5em]
+\instr{V[P]GATHERxxxx} d, [base+a*scale+disp], b\\
+Umí načíst různé rozházené položky z paměti do vektoru.\\
+V \texttt{a} jsou indexy, který se ponásobí a šoupnou aby vznikla adresa.\\
+V \texttt{b} je maska, která určí, jestli se to načte nebo ne.
+Pokud ne, tak se zachová původní hodnota.\\
+\texttt{xxxx} určuje typ indexů a co se načítá, což je samo ovlivněno jestli
+je to celočíselné nebo ne.
+Takže třeba \texttt{VPGATHERDD} má v \texttt{a} indexy jako dvojslova
+a načítá data ve dvojslovech,
+\texttt{VGATHERQPD} má v \texttt{a} indexy jako quadslova
+a načítá data jako double.
+\\[0.5em]
+\instr{VFMADD(132|231)(PS|PD|SS|SD)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}
+\textit{Fused Multiply-Add}\\
+Vynásobí dva operandy a pak přičte třetí,\\
+Pořadí dáno čísly, takže třeba 132 znamená (dst $\times$ src2) + src1.\\
+
+\section{ARM}
+\subsection{Režimy procesoru}
+Zhruba dle snižující se priority:
+\begin{itemize}
+    \item Přerušení -- obsluha chyby s pamětí
+    \item IFQ (Fast Interrupt Request) --
+    přerušení s vysokou prioritou
+    \item IRQ (Interrupt Request) --
+    běžné přerušení
+    \item Nedefinovaný -- 
+    obsluda použití neznámých instrukcí
+    \item Dohližitelský (Supervisor) --
+    po reset a SW přerušení
+    \item Uživatelský (User) --
+    běžné aplikace, neprivilagovaný režim
+\end{itemize}
+64bit zavádí exception levels.\\
+Ty jsou čtyři:
+\begin{itemize}
+    \item EL0 -- uživatelský režim
+    \item EL1 -- kernel
+    \item EL2 -- hypervisor
+    \item EL3 -- secure monitor
+\end{itemize}
+\subsection{Registry}
+\textbf{16 32bit nebo 32 64bit registrů}\\
+Prvních 13 jsou vždy dostupné a všeobecné.
+\begin{itemize}
+    \item \textbf{r13(sp)} -- stack pointer
+    \item \textbf{r14(lr)} -- návratová adresa
+    \item \textbf{r15(pc)} -- programový čítač
+    \item \textbf{cpsr} -- aktuální stavový registr
+\end{itemize}
+Každý režim mé své vlastní refistry r14 a r15.\\
+FIQ má dokonce vlastní i r8 až r12.
+\\[0.5em]
+64 architetura většinu z tohodle zahazuje,
+volných má 31 registrů a PC, SP jsou zvlášť.\\
+
+\subsection{Práce s registry a ARM obecně}
+\textbf{Load/Store architektura} 
+-- Neexistují instrukce co umí provádět operace nad pamětí,
+krom samozřejmě načítání a ukládání.
+\\[0.5em]
+To znamená, že všechny operace se provádí mezi registry.
+\\[0.5em]
+\textbf{Programový čítač (PC)}\\
+Všechny instrukce mají 32 bitů a ve standardním
+režimu musí být zarovnány slova (adresa musí být násobkem 4).\\
+POZOR word je v ARM 32 bitů!!!\\
+Instrukce jsou řetězené (probíhají částečně paralelně),
+PC ukazuje vždy na tu právě FETCHed (pak je DECODE a EXECUTE).\\
+\textbf{Přerušení}\\
+Skočí se na kód zpracování a vymění se sada registrů.\\
+\\[0.5em]
+\textbf{Stavový registr (CPSR)}\\
+Obsahuje příznaky (N -- záporné, C -- přenos, Z -- nula, V -- přetečení),\\
+Indikátor módu (uživatelský, dohlížetelský, přerušení, atd),\\
+Nastavení zakázání přerušení, a nějakej palec\dots
+
+\subsection{Provádění instrukcí}
+Instrukce mají sadu formátu, kde vždy nějaká do jedné patří.\\
+Ke každé lze ale přidat podmínku vykonání, třeba že se provede jen pokud poslední operace byla nulová (EQ).\\
+A taky zda má ovlivnit příznaky (S).\\
+Když se neuvede nic, je to by default bez S a s podmínkou AL (always).\\
+V 64bit to defakto celý zahodily.\\
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|c|c|p{5.2cm}|p{6.2cm}|}
+\hline
+\textbf{Kód (přípona)} & \textbf{Podmínka} & \textbf{Význam s CMP} & \textbf{Význam pro podmíněné vykonání instrukce: výsledek operace, která naposledy měnila příznaky...} \\
+\hline
+AL & vždy & --- & --- \\
+\hline
+EQ & == & shodná čísla & ... byl roven nule \\
+\hline
+NE & != & nejsou shodná čísla & ... nebyl roven nule \\
+\hline
+PL & >= 0 & ? & ... byl větší nebo roven nule (kladný) \\
+\hline
+MI & < 0 & ? & ... byl menší než nula \\
+\hline
+CC/LO & < & bezznaménkové menší & ... nepřetekl (C == 0) \\
+\hline
+CS/HS & >= & bezznaménkové větší nebo rovno & ... přetekl (C == 1) \\
+\hline
+VC & V == 0 & ? & ... znaménkově nepřetekl (V == 0) \\
+\hline
+VS & V == 1 & ? & ... znaménkově přetekl (V == 1) \\
+\hline
+GT & > & znaménkově větší & ? \\
+\hline
+GE & >= & znaménkově větší nebo rovno & ? \\
+\hline
+LT & < & znaménkově menší & ? \\
+\hline
+LE & <= & znaménkově menší nebo rovno & ? \\
+\hline
+HI & > & bezznaménkově větší & ? \\
+\hline
+LS & <= & bezznaménkově menší nebo rovno & ? \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Instrukce}
+Většinou budu podmínky a tak vynechávat z formátu.
+\subsubsection{Skokové instrukce}
+\instr{B<podm>} návěští\\
+\instr{BL<podm>} návěští \textit{Je jako call}\\
+U 32bit je pak návrat MOV pc,lr (64bit má normálně RET)\\MOV pc,lr
+\subsubsection{Zpracování dat}
+Typický formát:\\
+\instr{INSTRUKCE[podm][S]} \reg{Rd}\textbf{,} \reg{Rn} | \const{\#imm}\\
+\instr{INSTRUKCE[podm][S]} \reg{Rd}\textbf{,} \reg{Rn}\textbf{,} \reg{Rn} | \const{\#imm}\\
+\\[0.5em]
+\instr{MOV} \reg{Rd}\textbf{,} \reg{Rm} | \const{\#imm}\\
+\dots nedoděláno, ale v prezentaci jsou fajn a jsou velmi logické,
+nic moc extra tam není, i když určitě doporučuju si projít, jelikož
+přeci jenom jsou ty názvy tvořený trochu jinak.
+
+\subsubsection{LoadStore}
+Preindexová verze:\\
+\instr{LDR} \reg{Rt}\textbf{,} \mem{[Rn, \const{\#offset}]}\\
+\instr{LDR} \reg{Rt}\textbf{,} \mem{[Rn, \const{\#offset}]!}\\
+\instr{STR} \reg{Rt}\textbf{,} \mem{[Rn, \const{\#offset}]}\\
+\instr{STR} \reg{Rt}\textbf{,} \mem{[Rn, \const{\#offset}]!}\\
+Postindexová verze:\\
+\instr{LDR} \reg{Rt}\textbf{,} \mem{[Rn]}\textbf{,} \const{\#offset}\\
+\instr{STR} \reg{Rt}\textbf{,} \mem{[Rn]}\textbf{,} \const{\#offset}\\
+Preindexová verze nejdříve provede posun a až potom načte/uloží.\\
+Pokud je tam vykřičník, tak se ta posunutá adresa automatický zapíše zpět do Rn.\\
+Postindexová verze nejdřív načte/uloží a pak teprve provede posun.\\
+A POZOR, tam si nelze vybrat, vždycky se ta posunutá adresa zapíše zpět do Rn.
 \end{document}
