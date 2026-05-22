@@ -3,12 +3,12 @@
 ]{cz_sablona}
 
 
-\title{IPA overview}
+\title{IPA overview 2026}
 \author{Zubař}
 \date{\today}
 
 \usepackage{svg}
-\usepackage{float} %added so I can place figures [H]
+\usepackage{float}
 \usepackage{textcomp}
 \usepackage{enumitem}
 \usepackage{xcolor}
@@ -29,6 +29,19 @@
 \maketitle
 
 \thispagestyle{empty}
+\section*{Úvod}
+Inspirován bindiff tahákem, jal jsem se v rámci učení si taky vytvořit
+vlastní tahák/overview. Není to dokončeno, ale je tu snad vše z
+MMX, SSE a AVX. ARM je jen popsaný a s pár funky instrukcemi
+a Neon není vůbec. Tak zveřejňuji, třeba to někomu pomůže.
+\\[0.5em]
+Chyby? Možná jsou, nezaručuju, většina věcí je převzatá z prezentací,
+jenom napsána jinak. Pokud něco najdete a budete mít zájem třeba expandovat
+tuto srandu, zde odkaz na repo, dělejte si s ním co chcete:
+% Jediné co zakazuji je smání se mému kódu,
+% bludný cestovateli ....
+\url{https://github.com/Brepan/IPA_overview}
+
 \newpage
 \tableofcontents
 \thispagestyle{empty}
@@ -227,22 +240,22 @@ pro D: \texttt{d[127:64] = s1[127:64], d[63:0] = s2[63:0]}
 \\[0.5em]
 \instr{MOVPLP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
 \instr{MOVPLP(S|D)} \reg{xmm}/\mem{m*}\textbf{,} \reg{xmm}\\
-Moves the lower 64 bits, does not zero the upper bits.
+Přesune dolních 64 bitů, horní bity nevynuluje.
 \\[0.5em]
 \instr{VMOVLP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \mem{m64}\\
-Functions like VMOVS(S|D) but with memory and without zeroing upper bits.\\
-When writing into memory, it only has two operands, and functions as expected.
+Funguje jako VMOVS(S|D), ale s pamětí a bez vynulování horních bitů.\\
+Při zápisu do paměti má pouze dva operandy a funguje očekávaným způsobem.
 \\[0.5em]
 \instr{MOVHP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
 \instr{MOVHP(S|D)} \reg{xmm}/\mem{m*}\textbf{,} \reg{xmm}\\
 \instr{VMOVHP(S|D)} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \mem{m64}\\
-Similar to the Lower moves, but operates on the upper 64 bits of the XMM register.
+Podobné přesunům dolní poloviny, ale operuje na horních 64 bitech registru XMM.
 \\[0.5em]
 \instr{MOV(LH|HL)PS} \reg{xmm}\textbf{,} \reg{xmm}\\
 Přesune dolní polovinu jednoho registru do horní poloviny druhého a naopak.\\
 \instr{VMOV(LH|HL)PS} \reg{xmm}\textbf{,} \reg{xmm}\textbf{,} \reg{xmm}\\
-LH $\leftarrow$ dH = s2L, dL = s1L\\
-HL $\leftarrow$ dH = s1H, dL = s2H
+LH $\rightarrow$ dH = s2L, dL = s1L\\
+HL $\rightarrow$ dH = s1H, dL = s2H
 \\[0.5em]
 \instr{[V]MOVMSKP(S|D)} \reg{r32/64}\textbf{,} \reg{*mm} 
 \textit{(Move Masked Scalar Packed Single/Double)} \\
@@ -278,7 +291,7 @@ Porovnání dáno \const{imm8}, ale lze i pseudoinstrukcemi (e.g. \instr{CPMLEPS
 \\[0.5em]
 \instr{[V][U]COMIS(S|D)} \reg{xmm}\textbf{,} \reg{xmm}/\mem{m*}\\
 Porovná skalární floaty nebo doubly a nastaví CF, PF, ZF podle výsledku.\\
-\texttt{U} Necrashne pokud jsou čísla neporovnatelná.
+\texttt{U} -- Necrashne pokud jsou čísla neporovnatelná.
 
 \subsection{Aritmetické instrukce SSE a AVX}
 Tady je jsou všechny klasické aritmetické instrukce, ale pro floaty a doubly.\\
@@ -311,9 +324,11 @@ Dělá průměr dvou operandů vektorově.
 \\[0.5em]
 \instr{[V]PEXTRW} \reg{r32/64}/\mem{m16}\textbf{,} \reg{*mm}\textbf{,} \const{imm8}\\
 Vyextrahuje hodnotu z src na indexu daném \const{imm8} a uloží dolů do obecného registru nebo paměti.
+\includegraphics[width=0.4\textwidth]{pics/EXTR.png}
 \\[0.5em]
 \instr{[V]INSERTW} \reg{*mm}\textbf{,} \reg{r32/64}/\mem{m16}\textbf{,} \const{imm8}\\
 Vloží hodnotu z dolní části obecného registru nebo paměti do src na index daný \const{imm8}.
+\includegraphics[width=0.4\textwidth]{pics/INSER.png}
 \\[0.5em]
 \instr{[V]P(MIN|MAX)(U|S)(B|W)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
 Určí minimální nebo maximální hodnotu mezi dvěma operandy vektorově.
@@ -371,6 +386,7 @@ Zase horizontalni instrukce, tedy sčitaj/odčitaj sousedy.\\
 \instr{[V]PALIGNR} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
 Vezme dst a src (případně src2), zkonkatenuje je, šoupne doprava
 dle \const{imm8} a výsledek uloží do dst.\\
+\includegraphics[width=0.8\textwidth]{pics/ALIGN.png}\\
 \instr{[V]SHUFB} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\\
 Přehází dst (nebo src1) dle obsahu src (nebo src2).\\
 Každý byte určuje jaký bajt z dst (nebo src1) se má dostat do výsledku.\\
@@ -394,7 +410,7 @@ Jinak je to toho prvniho typu na druhy prostě.
 \\[0.5em]
 \instr{[V]PACKUSDW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}
 \textit{Pack Unsigned with Saturation from DWords to Words}\\
-Zpackuje dvojslova z dst i src do unsigned wordů v dst.
+Zpackuje(zmenší) dvojslova z dst i src do unsigned wordů v dst.
 \\[0.5em]
 \instr{[V]DPP(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
 \textit{Dot Product of Packed Single/Double}\\
@@ -402,7 +418,8 @@ Děká maskovaný skalarni součin mezi dvěma vektory.\\
 Nejdřív se normálně pronásobí složky, pak se sečtou ty,
 které mají v horní části \const{imm8} nastavený bit.\\
 Výsledek se pak uloží tam, kde je v dolní části \const{imm8} 
-nastavený bit.
+nastavený bit.\\
+\includegraphics[width=0.8\textwidth]{pics/DP.png}
 \\[0.5em]
 \instr{[V]MPSADBW} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
 \textit{Masked Packed Sum of Absolute Differences of Bytes into Words}\\
@@ -413,7 +430,8 @@ V těch indexech jsou okna o velikosti 4 byte,
 s nimi se provede SAD a výsledek se uloží do dst.\\
 Pak se posune okno v dst do prava o jeden byte a znovu,
 vysledek se uloží do další pozice.\\
-Takhle celý osmkrát a je to.
+Takhle celý osmkrát a je to.\\
+\includegraphics[width=1\textwidth]{pics/MPSA.png}
 \\[0.5em]
 \instr{[V]ROUND(S|P)(S|D)} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
 Zaokrouhlí floaty dle typu na celá signed čísla.\\
@@ -575,6 +593,7 @@ Posune každou složky v src1 o to co je v src2 a dá to do dst.\\
 \\[0.5em]
 \instr{VPERM[IL](PS|PD)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}/\reg{*mm}\\
 Promíchá src1 podle \const{imm8} nebo src2 a uloží do dst.\\
+Jako SHUF prostě, ale dynamicky lze.\\
 \texttt{IL} -- in-line -- Udělá to zvlášt pro horní a spodní polovinu.\\
 \instr{VPERM2F128} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}/\mem{m*}\textbf{,} \const{imm8}\\
 Promíchá src1 a src2 podle \const{imm8} a uloží do dst.\\
@@ -590,7 +609,8 @@ je to celočíselné nebo ne.
 Takže třeba \texttt{VPGATHERDD} má v \texttt{a} indexy jako dvojslova
 a načítá data ve dvojslovech,
 \texttt{VGATHERQPD} má v \texttt{a} indexy jako quadslova
-a načítá data jako double.
+a načítá data jako double.\\
+V prezentaci jsou na to tabulky, sem jsem to kopírovat už nechtěl.
 \\[0.5em]
 \instr{VFMADD(132|231)(PS|PD|SS|SD)} \reg{*mm}\textbf{,} \reg{*mm}\textbf{,} \reg{*mm}
 \textit{Fused Multiply-Add}\\
@@ -635,6 +655,7 @@ FIQ má dokonce vlastní i r8 až r12.
 \\[0.5em]
 64 architetura většinu z tohodle zahazuje,
 volných má 31 registrů a PC, SP jsou zvlášť.\\
+32. registr je xzr, tedy nulový registr.
 
 \subsection{Práce s registry a ARM obecně}
 \textbf{Load/Store architektura} 
@@ -715,9 +736,9 @@ Typický formát:\\
 \instr{INSTRUKCE[podm][S]} \reg{Rd}\textbf{,} \reg{Rn} | \const{\#imm}\\
 \instr{INSTRUKCE[podm][S]} \reg{Rd}\textbf{,} \reg{Rn}\textbf{,} \reg{Rn} | \const{\#imm}\\
 \\[0.5em]
-\instr{MOV} \reg{Rd}\textbf{,} \reg{Rm} | \const{\#imm}\\
+% \instr{MOV} \reg{Rd}\textbf{,} \reg{Rm} | \const{\#imm}\\
 \dots nedoděláno, ale v prezentaci jsou fajn a jsou velmi logické,
-nic moc extra tam není, i když určitě doporučuju si projít, jelikož
+nic moc extra šílenýho jako v SSE a AVX tam není, i když určitě doporučuju si projít, jelikož
 přeci jenom jsou ty názvy tvořený trochu jinak.
 
 \subsubsection{LoadStore}
@@ -733,4 +754,9 @@ Preindexová verze nejdříve provede posun a až potom načte/uloží.\\
 Pokud je tam vykřičník, tak se ta posunutá adresa automatický zapíše zpět do Rn.\\
 Postindexová verze nejdřív načte/uloží a pak teprve provede posun.\\
 A POZOR, tam si nelze vybrat, vždycky se ta posunutá adresa zapíše zpět do Rn.
+
+\section{ARM Neon}
+\dots nedoděláno, opět v prezentaci docela fajn, hlavně bacha
+na ty load a store funkce jsou docela komplexní, zbytek bych řekl, že
+je intuitivní.
 \end{document}
